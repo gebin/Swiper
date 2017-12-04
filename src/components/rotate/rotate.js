@@ -1,30 +1,7 @@
 import $ from '../../utils/dom';
 import Utils from '../../utils/utils';
 
-const Rotate = {
-  update() {
-    // Update Rotate Buttons
-    const swiper = this;
-    const params = swiper.params.rotate;
-
-    if (swiper.params.loop) return;
-    const { $nextEl, $prevEl } = swiper.rotate;
-
-    // if ($prevEl && $prevEl.length > 0) {
-    //   if (swiper.isBeginning) {
-    //     $prevEl.addClass(params.disabledClass);
-    //   } else {
-    //     $prevEl.removeClass(params.disabledClass);
-    //   }
-    // }
-    // if ($nextEl && $nextEl.length > 0) {
-    //   if (swiper.isEnd) {
-    //     $nextEl.addClass(params.disabledClass);
-    //   } else {
-    //     $nextEl.removeClass(params.disabledClass);
-    //   }
-    // }
-  },
+const Rotate = { 
   init() {
     const swiper = this;
     const params = swiper.params.rotate;
@@ -32,6 +9,7 @@ const Rotate = {
 
     let $nextEl;
     let $prevEl;
+
     if (params.nextEl) {
       $nextEl = $(params.nextEl);
       if (
@@ -43,6 +21,7 @@ const Rotate = {
         $nextEl = swiper.$el.find(params.nextEl);
       }
     }
+
     if (params.prevEl) {
       $prevEl = $(params.prevEl);
       if (
@@ -54,20 +33,22 @@ const Rotate = {
         $prevEl = swiper.$el.find(params.prevEl);
       }
     }
+
     if ($nextEl && $nextEl.length > 0) {
       $nextEl.on('click', (e) => {
         e.preventDefault();
-        var currentSlide = $(swiper.slides[swiper.activeIndex]).find('img');
+        var currentSlideImage = $(swiper.slides[swiper.activeIndex]).find('img');
         swiper.rotate.currentAngle = swiper.rotate.currentAngle + 90;
-        currentSlide.transition(400).transform(`translate3d(0,0,0) scale(${swiper.zoom.currentScale}) rotateZ(${swiper.rotate.currentAngle}deg)`);
+        currentSlideImage.transition(400).transform(`translate3d(0,0,0) scale(${swiper.zoom.currentScale}) rotateZ(${swiper.rotate.currentAngle}deg)`);
       });
     }
+    
     if ($prevEl && $prevEl.length > 0) {
       $prevEl.on('click', (e) => {
         e.preventDefault();
-        var currentSlide = $(swiper.slides[swiper.activeIndex]).find('img');
+        var currentSlideImage = $(swiper.slides[swiper.activeIndex]).find('img');
         swiper.rotate.currentAngle = swiper.rotate.currentAngle - 90; 
-        currentSlide.transition(400).transform(`translate3d(0,0,0) scale(${swiper.zoom.currentScale}) rotateZ(${swiper.rotate.currentAngle}deg)`);
+        currentSlideImage.transition(400).transform(`translate3d(0,0,0) scale(${swiper.zoom.currentScale}) rotateZ(${swiper.rotate.currentAngle}deg)`);
       });
     }
 
@@ -83,11 +64,16 @@ const Rotate = {
     const { $nextEl, $prevEl } = swiper.rotate;
     if ($nextEl && $nextEl.length) {
       $nextEl.off('click');
-      // $nextEl.removeClass(swiper.params.rotate.disabledClass);
     }
     if ($prevEl && $prevEl.length) {
       $prevEl.off('click');
-      // $prevEl.removeClass(swiper.params.rotate.disabledClass);
+    }
+  },
+  onTransitionEnd() {
+    const swiper = this;
+    const rotate = swiper.rotate;
+    if (swiper.previousIndex !== swiper.activeIndex) {
+      rotate.currentAngle = 0;
     }
   },
 };
@@ -96,11 +82,11 @@ export default {
   name: 'rotate',
   params: {
     rotate: {
+      enabled: true,
       nextEl: null,
       prevEl: null,
       angle : 0,
       hideOnClick: false,
-      // disabledClass: 'swiper-button-disabled',
       hiddenClass: 'swiper-button-hidden',
     },
   },
@@ -108,27 +94,19 @@ export default {
     const swiper = this;
     Utils.extend(swiper, {
       rotate: {
+        enabled: true,
         currentAngle : 0,
-        init: Rotate.init.bind(swiper),
-        update: Rotate.update.bind(swiper),
+        init: Rotate.init.bind(swiper), 
         destroy: Rotate.destroy.bind(swiper),
+        onTransitionEnd: Rotate.onTransitionEnd.bind(swiper),
       },
     });
   },
   on: {
     init() {
       const swiper = this;
-      swiper.rotate.init();
-      swiper.rotate.update();
-    },
-    toEdge() {
-      const swiper = this;
-      swiper.rotate.update();
-    },
-    fromEdge() {
-      const swiper = this;
-      swiper.rotate.update();
-    },
+      swiper.rotate.init(); 
+    }, 
     destroy() {
       const swiper = this;
       swiper.rotate.destroy();
@@ -143,6 +121,12 @@ export default {
       ) {
         if ($nextEl) $nextEl.toggleClass(swiper.params.rotate.hiddenClass);
         if ($prevEl) $prevEl.toggleClass(swiper.params.rotate.hiddenClass);
+      }
+    },
+    transitionEnd() {
+      const swiper = this;
+      if (swiper.rotate.enabled && swiper.params.rotate.enabled) {
+        swiper.rotate.onTransitionEnd();
       }
     },
   },
