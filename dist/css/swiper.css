@@ -7,7 +7,7 @@
  *
  * Released under the MIT License
  *
- * Released on: November 28, 2017
+ * Released on: December 9, 2017
  */
 .swiper-container {
   margin: 0 auto;
@@ -201,6 +201,39 @@
 .swiper-button-next.swiper-button-black,
 .swiper-container-rtl .swiper-button-prev.swiper-button-black {
   background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M27%2C22L27%2C22L5%2C44l-2.1-2.1L22.8%2C22L2.9%2C2.1L5%2C0L27%2C22L27%2C22z'%20fill%3D'%23000000'%2F%3E%3C%2Fsvg%3E");
+}
+.swiper-button-rotate-prev,
+.swiper-button-rotate-next {
+  position: absolute;
+  bottom: 5%;
+  width: 50px;
+  height: 50px;
+  margin-top: -22px;
+  z-index: 10;
+  cursor: pointer;
+  background-size: 27px 44px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.swiper-button-rotate-prev.swiper-button-rotate-disabled,
+.swiper-button-rotate-next.swiper-button-rotate-disabled {
+  opacity: 0.35;
+  cursor: auto;
+  pointer-events: none;
+}
+.swiper-button-rotate-prev,
+.swiper-container-rtl .swiper-button-rotate-next {
+  background: url(https://ssl-assets.che300.com/cdn/image/rotate.png) no-repeat;
+  left: 10px;
+  right: auto;
+  -webkit-transform: rotateY(180deg);
+  transform: rotateY(180deg);
+}
+.swiper-button-rotate-next,
+.swiper-container-rtl .swiper-button-rotate-prev {
+  background: url(https://ssl-assets.che300.com/cdn/image/rotate.png) no-repeat;
+  right: 10px;
+  left: auto;
 }
 .swiper-pagination {
   position: absolute;

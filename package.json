@@ -7,7 +7,7 @@
   "module": "dist/js/swiper.esm.bundle.js",
   "scripts": {
     "build:dev": "cross-env NODE_ENV=development gulp build",
-    "build:prod": "NODE_ENV=production gulp build",
+    "build:prod": "cross-env NODE_ENV=production gulp build",
     "dev": "cross-env NODE_ENV=development gulp build && cross-env NODE_ENV=development gulp playground && cross-env NODE_ENV=development gulp server",
     "prod": "NODE_ENV=production gulp playground && NODE_ENV=production gulp server",
     "lint": "eslint .",

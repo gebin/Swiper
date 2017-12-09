@@ -500,7 +500,6 @@ export default {
     },
     destroy() {
       const swiper = this;
-      debugger
       swiper.zoom.disable();
     },
     touchStart(e) {
@@ -515,12 +514,15 @@ export default {
     },
     doubleTap(e) {
       const swiper = this;
+      // 排除旋转按钮被双击
+      if(e && e.target.className === 'swiper-button-rotate-next'){
+        return;
+      }
       if (swiper.params.zoom.enabled && swiper.zoom.enabled && swiper.params.zoom.toggle) {
         swiper.zoom.toggle(e);
       }
     },
     transitionEnd() {
-      debugger
       const swiper = this;
       if (swiper.zoom.enabled && swiper.params.zoom.enabled) {
         swiper.zoom.onTransitionEnd();

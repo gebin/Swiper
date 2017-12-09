@@ -1,3 +1,6 @@
+/**
+ * 旋转按钮
+ */
 import $ from '../../utils/dom';
 import Utils from '../../utils/utils';
 
@@ -37,18 +40,22 @@ const Rotate = {
     if ($nextEl && $nextEl.length > 0) {
       $nextEl.on('click', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         var currentSlideImage = $(swiper.slides[swiper.activeIndex]).find('img');
         swiper.rotate.currentAngle = swiper.rotate.currentAngle + 90;
         currentSlideImage.transition(400).transform(`translate3d(0,0,0) scale(${swiper.zoom.currentScale}) rotateZ(${swiper.rotate.currentAngle}deg)`);
+        return false;
       });
     }
     
     if ($prevEl && $prevEl.length > 0) {
       $prevEl.on('click', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         var currentSlideImage = $(swiper.slides[swiper.activeIndex]).find('img');
         swiper.rotate.currentAngle = swiper.rotate.currentAngle - 90; 
         currentSlideImage.transition(400).transform(`translate3d(0,0,0) scale(${swiper.zoom.currentScale}) rotateZ(${swiper.rotate.currentAngle}deg)`);
+        return false;
       });
     }
 
@@ -72,8 +79,12 @@ const Rotate = {
   onTransitionEnd() {
     const swiper = this;
     const rotate = swiper.rotate;
+    const currentIndex = (swiper.previousIndex === undefined) ? swiper.activeIndex : swiper.previousIndex;
+
     if (swiper.previousIndex !== swiper.activeIndex) {
       rotate.currentAngle = 0;
+      var currentSlideImage = $(swiper.slides[currentIndex]).find('img');
+      currentSlideImage.transition(400).transform('translate3d(0,0,0) scale(1) rotateZ(0)');
     }
   },
 };
@@ -85,7 +96,6 @@ export default {
       enabled: true,
       nextEl: null,
       prevEl: null,
-      angle : 0,
       hideOnClick: false,
       hiddenClass: 'swiper-button-hidden',
     },
@@ -96,6 +106,7 @@ export default {
       rotate: {
         enabled: true,
         currentAngle : 0,
+        // angle : 0,
         init: Rotate.init.bind(swiper), 
         destroy: Rotate.destroy.bind(swiper),
         onTransitionEnd: Rotate.onTransitionEnd.bind(swiper),
@@ -122,7 +133,7 @@ export default {
         if ($nextEl) $nextEl.toggleClass(swiper.params.rotate.hiddenClass);
         if ($prevEl) $prevEl.toggleClass(swiper.params.rotate.hiddenClass);
       }
-    },
+    }, 
     transitionEnd() {
       const swiper = this;
       if (swiper.rotate.enabled && swiper.params.rotate.enabled) {
