@@ -47,6 +47,8 @@ const Zoom = {
     const swiper = this;
     const params = swiper.params.zoom;
     const zoom = swiper.zoom;
+    const rotate = swiper.rotate;
+
     const { gesture } = zoom;
     if (!Support.gestures) {
       if (e.type !== 'touchmove' || (e.type === 'touchmove' && e.targetTouches.length < 2)) {
@@ -67,12 +69,13 @@ const Zoom = {
     if (zoom.scale < params.minRatio) {
       zoom.scale = (params.minRatio + 1) - (((params.minRatio - zoom.scale) + 1) ** 0.5);
     }
-    gesture.$imageEl.transform(`translate3d(0,0,0) scale(${zoom.scale})`);
+    gesture.$imageEl.transform(`translate3d(0,0,0) scale(${zoom.scale}) rotateZ(${rotate.currentAngle}deg)`);
   },
   onGestureEnd(e) {
     const swiper = this;
     const params = swiper.params.zoom;
     const zoom = swiper.zoom;
+    const rotate = swiper.rotate;
     const { gesture } = zoom;
     if (!Support.gestures) {
       if (!zoom.fakeGestureTouched || !zoom.fakeGestureMoved) {
@@ -86,7 +89,7 @@ const Zoom = {
     }
     if (!gesture.$imageEl || gesture.$imageEl.length === 0) return;
     zoom.scale = Math.max(Math.min(zoom.scale, gesture.maxRatio), params.minRatio);
-    gesture.$imageEl.transition(swiper.params.speed).transform(`translate3d(0,0,0) scale(${zoom.scale})`);
+    gesture.$imageEl.transition(swiper.params.speed).transform(`translate3d(0,0,0) scale(${zoom.scale}) rotateZ(${rotate.currentAngle}deg)`);
     zoom.currentScale = zoom.scale;
     zoom.isScaling = false;
     if (zoom.scale === 1) gesture.$slideEl = undefined;
@@ -107,7 +110,7 @@ const Zoom = {
     const zoom = swiper.zoom;
     const { gesture, image, velocity } = zoom;
     if (!gesture.$imageEl || gesture.$imageEl.length === 0) return;
-    swiper.allowClick = false;
+    // swiper.allowClick = false;
     if (!image.isTouched || !gesture.$slideEl) return;
 
     if (!image.isMoved) {
@@ -235,7 +238,7 @@ const Zoom = {
     const zoom = swiper.zoom;
     const { gesture } = zoom;
     if (gesture.$slideEl && swiper.previousIndex !== swiper.activeIndex) {
-      gesture.$imageEl.transform('translate3d(0,0,0) scale(1)');
+      gesture.$imageEl.transform('translate3d(0,0,0) scale(1) rotateZ(0)');
       gesture.$imageWrapEl.transform('translate3d(0,0,0)');
       gesture.$slideEl = undefined;
       gesture.$imageEl = undefined;
@@ -263,6 +266,7 @@ const Zoom = {
 
     const zoom = swiper.zoom;
     const params = swiper.params.zoom;
+    const rotate = swiper.rotate;
     const { gesture, image } = zoom;
 
     if (!gesture.$slideEl) {
@@ -342,13 +346,15 @@ const Zoom = {
       translateY = 0;
     }
     gesture.$imageWrapEl.transition(300).transform(`translate3d(${translateX}px, ${translateY}px,0)`);
-    gesture.$imageEl.transition(300).transform(`translate3d(0,0,0) scale(${zoom.scale})`);
+    gesture.$imageEl.transition(300).transform(`translate3d(0,0,0) scale(${zoom.scale}) rotateZ(${rotate.currentAngle}deg)`);
   },
   out() {
     const swiper = this;
 
     const zoom = swiper.zoom;
     const params = swiper.params.zoom;
+
+    const rotate = swiper.rotate;
     const { gesture } = zoom;
 
     if (!gesture.$slideEl) {
@@ -361,7 +367,7 @@ const Zoom = {
     zoom.scale = 1;
     zoom.currentScale = 1;
     gesture.$imageWrapEl.transition(300).transform('translate3d(0,0,0)');
-    gesture.$imageEl.transition(300).transform('translate3d(0,0,0) scale(1)');
+    gesture.$imageEl.transition(300).transform(`translate3d(0,0,0) scale(1) rotateZ(${rotate.currentAngle}deg)`);
     gesture.$slideEl.removeClass(`${params.zoomedSlideClass}`);
     gesture.$slideEl = undefined;
   },
@@ -508,6 +514,10 @@ export default {
     },
     doubleTap(e) {
       const swiper = this;
+      // 排除旋转按钮被双击
+      if(e && e.target.className === 'swiper-button-rotate-next'){
+        return;
+      }
       if (swiper.params.zoom.enabled && swiper.zoom.enabled && swiper.params.zoom.toggle) {
         swiper.zoom.toggle(e);
       }

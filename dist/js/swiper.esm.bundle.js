@@ -7,7 +7,7 @@
  *
  * Released under the MIT License
  *
- * Released on: November 28, 2017
+ * Released on: December 9, 2017
  */
 
 import { $, add, addClass, append, attr, children, closest, css, data, each, eq, find, hasClass, html, index, is, next, nextAll, off, offset, on, outerHeight, outerWidth, parent, parents, prepend, prev, prevAll, remove, removeAttr, removeClass, styles, text, toggleClass, transform, transition, transitionEnd, trigger } from 'dom7/dist/dom7.modular';
@@ -3643,6 +3643,148 @@ var Navigation$1 = {
   },
 };
 
+/**
+ * 旋转按钮
+ */
+const Rotate = { 
+  init() {
+    const swiper = this;
+    const params = swiper.params.rotate;
+    if (!(params.nextEl || params.prevEl)) return;
+
+    let $nextEl;
+    let $prevEl;
+
+    if (params.nextEl) {
+      $nextEl = $(params.nextEl);
+      if (
+        swiper.params.uniqueNavElements &&
+        typeof params.nextEl === 'string' &&
+        $nextEl.length > 1 &&
+        swiper.$el.find(params.nextEl).length === 1
+      ) {
+        $nextEl = swiper.$el.find(params.nextEl);
+      }
+    }
+
+    if (params.prevEl) {
+      $prevEl = $(params.prevEl);
+      if (
+        swiper.params.uniqueNavElements &&
+        typeof params.prevEl === 'string' &&
+        $prevEl.length > 1 &&
+        swiper.$el.find(params.prevEl).length === 1
+      ) {
+        $prevEl = swiper.$el.find(params.prevEl);
+      }
+    }
+
+    if ($nextEl && $nextEl.length > 0) {
+      $nextEl.on('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        var currentSlideImage = $(swiper.slides[swiper.activeIndex]).find('img');
+        swiper.rotate.currentAngle = swiper.rotate.currentAngle + 90;
+        currentSlideImage.transition(400).transform(`translate3d(0,0,0) scale(${swiper.zoom.currentScale}) rotateZ(${swiper.rotate.currentAngle}deg)`);
+        return false;
+      });
+    }
+    
+    if ($prevEl && $prevEl.length > 0) {
+      $prevEl.on('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        var currentSlideImage = $(swiper.slides[swiper.activeIndex]).find('img');
+        swiper.rotate.currentAngle = swiper.rotate.currentAngle - 90; 
+        currentSlideImage.transition(400).transform(`translate3d(0,0,0) scale(${swiper.zoom.currentScale}) rotateZ(${swiper.rotate.currentAngle}deg)`);
+        return false;
+      });
+    }
+
+    Utils.extend(swiper.rotate, {
+      $nextEl,
+      nextEl: $nextEl && $nextEl[0],
+      $prevEl,
+      prevEl: $prevEl && $prevEl[0],
+    });
+  },
+  destroy() {
+    const swiper = this;
+    const { $nextEl, $prevEl } = swiper.rotate;
+    if ($nextEl && $nextEl.length) {
+      $nextEl.off('click');
+    }
+    if ($prevEl && $prevEl.length) {
+      $prevEl.off('click');
+    }
+  },
+  onTransitionEnd() {
+    const swiper = this;
+    const rotate = swiper.rotate;
+    const currentIndex = (swiper.previousIndex === undefined) ? swiper.activeIndex : swiper.previousIndex;
+
+    if (swiper.previousIndex !== swiper.activeIndex) {
+      rotate.currentAngle = 0;
+      var currentSlideImage = $(swiper.slides[currentIndex]).find('img');
+      currentSlideImage.transition(400).transform('translate3d(0,0,0) scale(1) rotateZ(0)');
+    }
+  },
+};
+
+var Rotate$1 = {
+  name: 'rotate',
+  params: {
+    rotate: {
+      enabled: true,
+      nextEl: null,
+      prevEl: null,
+      hideOnClick: false,
+      hiddenClass: 'swiper-button-hidden',
+    },
+  },
+  create() {
+    const swiper = this;
+    Utils.extend(swiper, {
+      rotate: {
+        enabled: true,
+        currentAngle : 0,
+        // angle : 0,
+        init: Rotate.init.bind(swiper), 
+        destroy: Rotate.destroy.bind(swiper),
+        onTransitionEnd: Rotate.onTransitionEnd.bind(swiper),
+      },
+    });
+  },
+  on: {
+    init() {
+      const swiper = this;
+      swiper.rotate.init(); 
+    }, 
+    destroy() {
+      const swiper = this;
+      swiper.rotate.destroy();
+    },
+    click(e) {
+      const swiper = this;
+      const { $nextEl, $prevEl } = swiper.rotate;
+      if (
+        swiper.params.rotate.hideOnClick &&
+        !$(e.target).is($prevEl) &&
+        !$(e.target).is($nextEl)
+      ) {
+        if ($nextEl) $nextEl.toggleClass(swiper.params.rotate.hiddenClass);
+        if ($prevEl) $prevEl.toggleClass(swiper.params.rotate.hiddenClass);
+      }
+    }, 
+    transitionEnd() {
+      const swiper = this;
+      if (swiper.rotate.enabled && swiper.params.rotate.enabled) {
+        swiper.rotate.onTransitionEnd();
+      }
+    },
+  },
+};
+
 const Pagination = {
   update() {
     // Render || Update Pagination bullets/items
@@ -4396,6 +4538,8 @@ const Zoom = {
     const swiper = this;
     const params = swiper.params.zoom;
     const zoom = swiper.zoom;
+    const rotate = swiper.rotate;
+
     const { gesture } = zoom;
     if (!Support.gestures) {
       if (e.type !== 'touchmove' || (e.type === 'touchmove' && e.targetTouches.length < 2)) {
@@ -4416,12 +4560,13 @@ const Zoom = {
     if (zoom.scale < params.minRatio) {
       zoom.scale = (params.minRatio + 1) - (((params.minRatio - zoom.scale) + 1) ** 0.5);
     }
-    gesture.$imageEl.transform(`translate3d(0,0,0) scale(${zoom.scale})`);
+    gesture.$imageEl.transform(`translate3d(0,0,0) scale(${zoom.scale}) rotateZ(${rotate.currentAngle}deg)`);
   },
   onGestureEnd(e) {
     const swiper = this;
     const params = swiper.params.zoom;
     const zoom = swiper.zoom;
+    const rotate = swiper.rotate;
     const { gesture } = zoom;
     if (!Support.gestures) {
       if (!zoom.fakeGestureTouched || !zoom.fakeGestureMoved) {
@@ -4435,7 +4580,7 @@ const Zoom = {
     }
     if (!gesture.$imageEl || gesture.$imageEl.length === 0) return;
     zoom.scale = Math.max(Math.min(zoom.scale, gesture.maxRatio), params.minRatio);
-    gesture.$imageEl.transition(swiper.params.speed).transform(`translate3d(0,0,0) scale(${zoom.scale})`);
+    gesture.$imageEl.transition(swiper.params.speed).transform(`translate3d(0,0,0) scale(${zoom.scale}) rotateZ(${rotate.currentAngle}deg)`);
     zoom.currentScale = zoom.scale;
     zoom.isScaling = false;
     if (zoom.scale === 1) gesture.$slideEl = undefined;
@@ -4456,7 +4601,7 @@ const Zoom = {
     const zoom = swiper.zoom;
     const { gesture, image, velocity } = zoom;
     if (!gesture.$imageEl || gesture.$imageEl.length === 0) return;
-    swiper.allowClick = false;
+    // swiper.allowClick = false;
     if (!image.isTouched || !gesture.$slideEl) return;
 
     if (!image.isMoved) {
@@ -4584,7 +4729,7 @@ const Zoom = {
     const zoom = swiper.zoom;
     const { gesture } = zoom;
     if (gesture.$slideEl && swiper.previousIndex !== swiper.activeIndex) {
-      gesture.$imageEl.transform('translate3d(0,0,0) scale(1)');
+      gesture.$imageEl.transform('translate3d(0,0,0) scale(1) rotateZ(0)');
       gesture.$imageWrapEl.transform('translate3d(0,0,0)');
       gesture.$slideEl = undefined;
       gesture.$imageEl = undefined;
@@ -4612,6 +4757,7 @@ const Zoom = {
 
     const zoom = swiper.zoom;
     const params = swiper.params.zoom;
+    const rotate = swiper.rotate;
     const { gesture, image } = zoom;
 
     if (!gesture.$slideEl) {
@@ -4691,13 +4837,15 @@ const Zoom = {
       translateY = 0;
     }
     gesture.$imageWrapEl.transition(300).transform(`translate3d(${translateX}px, ${translateY}px,0)`);
-    gesture.$imageEl.transition(300).transform(`translate3d(0,0,0) scale(${zoom.scale})`);
+    gesture.$imageEl.transition(300).transform(`translate3d(0,0,0) scale(${zoom.scale}) rotateZ(${rotate.currentAngle}deg)`);
   },
   out() {
     const swiper = this;
 
     const zoom = swiper.zoom;
     const params = swiper.params.zoom;
+
+    const rotate = swiper.rotate;
     const { gesture } = zoom;
 
     if (!gesture.$slideEl) {
@@ -4710,7 +4858,7 @@ const Zoom = {
     zoom.scale = 1;
     zoom.currentScale = 1;
     gesture.$imageWrapEl.transition(300).transform('translate3d(0,0,0)');
-    gesture.$imageEl.transition(300).transform('translate3d(0,0,0) scale(1)');
+    gesture.$imageEl.transition(300).transform(`translate3d(0,0,0) scale(1) rotateZ(${rotate.currentAngle}deg)`);
     gesture.$slideEl.removeClass(`${params.zoomedSlideClass}`);
     gesture.$slideEl = undefined;
   },
@@ -4857,6 +5005,10 @@ var Zoom$1 = {
     },
     doubleTap(e) {
       const swiper = this;
+      // 排除旋转按钮被双击
+      if(e && e.target.className === 'swiper-button-rotate-next'){
+        return;
+      }
       if (swiper.params.zoom.enabled && swiper.zoom.enabled && swiper.params.zoom.toggle) {
         swiper.zoom.toggle(e);
       }
@@ -6299,6 +6451,7 @@ Swiper$1.use([
   Keyboard$1,
   Mousewheel$1,
   Navigation$1,
+  Rotate$1,
   Pagination$1,
   Scrollbar$1,
   Parallax$1,

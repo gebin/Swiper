@@ -4,6 +4,7 @@ module.exports = {
     'keyboard',
     'mousewheel',
     'navigation',
+    'rotate',
     'pagination',
     'scrollbar',
     'parallax',

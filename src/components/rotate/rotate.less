@@ -1,0 +1,29 @@
+.swiper-button-rotate-prev, .swiper-button-rotate-next {
+  position: absolute;
+  bottom: 5%;
+  width: 50px;
+  height: 50px;
+  margin-top: -22px;
+  z-index: 10;
+  cursor: pointer;
+  background-size: 27px 44px;
+  background-position: center;
+  background-repeat: no-repeat;
+  &.swiper-button-rotate-disabled {
+    opacity: 0.35;
+    cursor: auto;
+    pointer-events: none;
+  }
+}
+.swiper-button-rotate-prev, .swiper-container-rtl .swiper-button-rotate-next {
+  background: url(https://ssl-assets.che300.com/cdn/image/rotate.png) no-repeat;
+  left: 10px;
+  right: auto;
+  transform: rotateY(180deg);
+}
+
+.swiper-button-rotate-next, .swiper-container-rtl .swiper-button-rotate-prev {
+  background: url(https://ssl-assets.che300.com/cdn/image/rotate.png) no-repeat;
+  right: 10px;
+  left: auto;
+} 

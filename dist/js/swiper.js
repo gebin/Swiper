@@ -7,7 +7,7 @@
  *
  * Released under the MIT License
  *
- * Released on: November 28, 2017
+ * Released on: December 9, 2017
  */
 
 (function (global, factory) {
@@ -4543,6 +4543,152 @@ var Navigation$1 = {
   },
 };
 
+/**
+ * 旋转按钮
+ */
+var Rotate = { 
+  init: function init() {
+    var swiper = this;
+    var params = swiper.params.rotate;
+    if (!(params.nextEl || params.prevEl)) { return; }
+
+    var $nextEl;
+    var $prevEl;
+
+    if (params.nextEl) {
+      $nextEl = $$1(params.nextEl);
+      if (
+        swiper.params.uniqueNavElements &&
+        typeof params.nextEl === 'string' &&
+        $nextEl.length > 1 &&
+        swiper.$el.find(params.nextEl).length === 1
+      ) {
+        $nextEl = swiper.$el.find(params.nextEl);
+      }
+    }
+
+    if (params.prevEl) {
+      $prevEl = $$1(params.prevEl);
+      if (
+        swiper.params.uniqueNavElements &&
+        typeof params.prevEl === 'string' &&
+        $prevEl.length > 1 &&
+        swiper.$el.find(params.prevEl).length === 1
+      ) {
+        $prevEl = swiper.$el.find(params.prevEl);
+      }
+    }
+
+    if ($nextEl && $nextEl.length > 0) {
+      $nextEl.on('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var currentSlideImage = $$1(swiper.slides[swiper.activeIndex]).find('img');
+        swiper.rotate.currentAngle = swiper.rotate.currentAngle + 90;
+        currentSlideImage.transition(400).transform(("translate3d(0,0,0) scale(" + (swiper.zoom.currentScale) + ") rotateZ(" + (swiper.rotate.currentAngle) + "deg)"));
+        return false;
+      });
+    }
+    
+    if ($prevEl && $prevEl.length > 0) {
+      $prevEl.on('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var currentSlideImage = $$1(swiper.slides[swiper.activeIndex]).find('img');
+        swiper.rotate.currentAngle = swiper.rotate.currentAngle - 90; 
+        currentSlideImage.transition(400).transform(("translate3d(0,0,0) scale(" + (swiper.zoom.currentScale) + ") rotateZ(" + (swiper.rotate.currentAngle) + "deg)"));
+        return false;
+      });
+    }
+
+    Utils.extend(swiper.rotate, {
+      $nextEl: $nextEl,
+      nextEl: $nextEl && $nextEl[0],
+      $prevEl: $prevEl,
+      prevEl: $prevEl && $prevEl[0],
+    });
+  },
+  destroy: function destroy() {
+    var swiper = this;
+    var ref = swiper.rotate;
+    var $nextEl = ref.$nextEl;
+    var $prevEl = ref.$prevEl;
+    if ($nextEl && $nextEl.length) {
+      $nextEl.off('click');
+    }
+    if ($prevEl && $prevEl.length) {
+      $prevEl.off('click');
+    }
+  },
+  onTransitionEnd: function onTransitionEnd() {
+    var swiper = this;
+    var rotate = swiper.rotate;
+    var currentIndex = (swiper.previousIndex === undefined) ? swiper.activeIndex : swiper.previousIndex;
+
+    if (swiper.previousIndex !== swiper.activeIndex) {
+      rotate.currentAngle = 0;
+      var currentSlideImage = $$1(swiper.slides[currentIndex]).find('img');
+      currentSlideImage.transition(400).transform('translate3d(0,0,0) scale(1) rotateZ(0)');
+    }
+  },
+};
+
+var Rotate$1 = {
+  name: 'rotate',
+  params: {
+    rotate: {
+      enabled: true,
+      nextEl: null,
+      prevEl: null,
+      hideOnClick: false,
+      hiddenClass: 'swiper-button-hidden',
+    },
+  },
+  create: function create() {
+    var swiper = this;
+    Utils.extend(swiper, {
+      rotate: {
+        enabled: true,
+        currentAngle : 0,
+        // angle : 0,
+        init: Rotate.init.bind(swiper), 
+        destroy: Rotate.destroy.bind(swiper),
+        onTransitionEnd: Rotate.onTransitionEnd.bind(swiper),
+      },
+    });
+  },
+  on: {
+    init: function init() {
+      var swiper = this;
+      swiper.rotate.init(); 
+    }, 
+    destroy: function destroy() {
+      var swiper = this;
+      swiper.rotate.destroy();
+    },
+    click: function click(e) {
+      var swiper = this;
+      var ref = swiper.rotate;
+      var $nextEl = ref.$nextEl;
+      var $prevEl = ref.$prevEl;
+      if (
+        swiper.params.rotate.hideOnClick &&
+        !$$1(e.target).is($prevEl) &&
+        !$$1(e.target).is($nextEl)
+      ) {
+        if ($nextEl) { $nextEl.toggleClass(swiper.params.rotate.hiddenClass); }
+        if ($prevEl) { $prevEl.toggleClass(swiper.params.rotate.hiddenClass); }
+      }
+    }, 
+    transitionEnd: function transitionEnd() {
+      var swiper = this;
+      if (swiper.rotate.enabled && swiper.params.rotate.enabled) {
+        swiper.rotate.onTransitionEnd();
+      }
+    },
+  },
+};
+
 var Pagination = {
   update: function update() {
     // Render || Update Pagination bullets/items
@@ -5315,6 +5461,8 @@ var Zoom = {
     var swiper = this;
     var params = swiper.params.zoom;
     var zoom = swiper.zoom;
+    var rotate = swiper.rotate;
+
     var gesture = zoom.gesture;
     if (!Support.gestures) {
       if (e.type !== 'touchmove' || (e.type === 'touchmove' && e.targetTouches.length < 2)) {
@@ -5335,12 +5483,13 @@ var Zoom = {
     if (zoom.scale < params.minRatio) {
       zoom.scale = (params.minRatio + 1) - (Math.pow( ((params.minRatio - zoom.scale) + 1), 0.5 ));
     }
-    gesture.$imageEl.transform(("translate3d(0,0,0) scale(" + (zoom.scale) + ")"));
+    gesture.$imageEl.transform(("translate3d(0,0,0) scale(" + (zoom.scale) + ") rotateZ(" + (rotate.currentAngle) + "deg)"));
   },
   onGestureEnd: function onGestureEnd(e) {
     var swiper = this;
     var params = swiper.params.zoom;
     var zoom = swiper.zoom;
+    var rotate = swiper.rotate;
     var gesture = zoom.gesture;
     if (!Support.gestures) {
       if (!zoom.fakeGestureTouched || !zoom.fakeGestureMoved) {
@@ -5354,7 +5503,7 @@ var Zoom = {
     }
     if (!gesture.$imageEl || gesture.$imageEl.length === 0) { return; }
     zoom.scale = Math.max(Math.min(zoom.scale, gesture.maxRatio), params.minRatio);
-    gesture.$imageEl.transition(swiper.params.speed).transform(("translate3d(0,0,0) scale(" + (zoom.scale) + ")"));
+    gesture.$imageEl.transition(swiper.params.speed).transform(("translate3d(0,0,0) scale(" + (zoom.scale) + ") rotateZ(" + (rotate.currentAngle) + "deg)"));
     zoom.currentScale = zoom.scale;
     zoom.isScaling = false;
     if (zoom.scale === 1) { gesture.$slideEl = undefined; }
@@ -5378,7 +5527,7 @@ var Zoom = {
     var image = zoom.image;
     var velocity = zoom.velocity;
     if (!gesture.$imageEl || gesture.$imageEl.length === 0) { return; }
-    swiper.allowClick = false;
+    // swiper.allowClick = false;
     if (!image.isTouched || !gesture.$slideEl) { return; }
 
     if (!image.isMoved) {
@@ -5508,7 +5657,7 @@ var Zoom = {
     var zoom = swiper.zoom;
     var gesture = zoom.gesture;
     if (gesture.$slideEl && swiper.previousIndex !== swiper.activeIndex) {
-      gesture.$imageEl.transform('translate3d(0,0,0) scale(1)');
+      gesture.$imageEl.transform('translate3d(0,0,0) scale(1) rotateZ(0)');
       gesture.$imageWrapEl.transform('translate3d(0,0,0)');
       gesture.$slideEl = undefined;
       gesture.$imageEl = undefined;
@@ -5536,6 +5685,7 @@ var Zoom = {
 
     var zoom = swiper.zoom;
     var params = swiper.params.zoom;
+    var rotate = swiper.rotate;
     var gesture = zoom.gesture;
     var image = zoom.image;
 
@@ -5616,13 +5766,15 @@ var Zoom = {
       translateY = 0;
     }
     gesture.$imageWrapEl.transition(300).transform(("translate3d(" + translateX + "px, " + translateY + "px,0)"));
-    gesture.$imageEl.transition(300).transform(("translate3d(0,0,0) scale(" + (zoom.scale) + ")"));
+    gesture.$imageEl.transition(300).transform(("translate3d(0,0,0) scale(" + (zoom.scale) + ") rotateZ(" + (rotate.currentAngle) + "deg)"));
   },
   out: function out() {
     var swiper = this;
 
     var zoom = swiper.zoom;
     var params = swiper.params.zoom;
+
+    var rotate = swiper.rotate;
     var gesture = zoom.gesture;
 
     if (!gesture.$slideEl) {
@@ -5635,7 +5787,7 @@ var Zoom = {
     zoom.scale = 1;
     zoom.currentScale = 1;
     gesture.$imageWrapEl.transition(300).transform('translate3d(0,0,0)');
-    gesture.$imageEl.transition(300).transform('translate3d(0,0,0) scale(1)');
+    gesture.$imageEl.transition(300).transform(("translate3d(0,0,0) scale(1) rotateZ(" + (rotate.currentAngle) + "deg)"));
     gesture.$slideEl.removeClass(("" + (params.zoomedSlideClass)));
     gesture.$slideEl = undefined;
   },
@@ -5782,6 +5934,10 @@ var Zoom$1 = {
     },
     doubleTap: function doubleTap(e) {
       var swiper = this;
+      // 排除旋转按钮被双击
+      if(e && e.target.className === 'swiper-button-rotate-next'){
+        return;
+      }
       if (swiper.params.zoom.enabled && swiper.zoom.enabled && swiper.params.zoom.toggle) {
         swiper.zoom.toggle(e);
       }
@@ -7245,6 +7401,7 @@ Swiper$1.use([
   Keyboard$1,
   Mousewheel$1,
   Navigation$1,
+  Rotate$1,
   Pagination$1,
   Scrollbar$1,
   Parallax$1,
